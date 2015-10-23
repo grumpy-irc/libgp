@@ -40,6 +40,7 @@
 #define GP_CMD_PERMDENY                     "PERMDENY"
 #define GP_CMD_UNKNOWN                      "UNKNOWN"
 #define GP_CMD_ERROR                        "ERROR"
+#define GP_CMD_CHANNEL_RESYNC               "CHANNEL_RESYNC"
 #define GP_CMD_SCROLLBACK_RESYNC            "SCROLLBACK_RESYNC"
 #define GP_CMD_SCROLLBACK_LOAD_NEW_ITEM     "SCROLLBACK_LOAD_NEW_ITEM"
 
