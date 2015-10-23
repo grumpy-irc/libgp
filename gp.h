@@ -24,7 +24,8 @@
 #define GP_EINVALIDLOGINPARAMS   -2
 #define GP_ENOSERVER             -3
 
-#define GP_MAGIC 0x010000
+#define GP_VERSION 0x010000
+#define GP_MAGIC   0x010000
 #define GP_HEADER_SIZE 8
 #define GP_DEFAULT_PORT 6200
 #define GP_TYPE_SYSTEM 0
@@ -51,6 +52,9 @@ namespace libgp
             //! use this only if you aren't overriding this class
             virtual void ResolveSignals();
             virtual void Disconnect();
+            unsigned long long GetBytesSent();
+            unsigned long long GetBytesRcvd();
+            virtual int GetVersion();
             unsigned long MaxIncomingCacheSize;
 
         signals:
@@ -78,6 +82,9 @@ namespace libgp
             QByteArray incomingCache;
             QTcpSocket *socket;
 
+        private:
+            unsigned long long sentBytes;
+            unsigned long long recvBytes;
     };
 }
 

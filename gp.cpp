@@ -19,6 +19,8 @@ using namespace libgp;
 GP::GP(QTcpSocket *tcp_socket)
 {
     this->socket = tcp_socket;
+    this->sentBytes = 0;
+    this->recvBytes = 0;
     // We don't want to receive single packet bigger than 800kb
     this->MaxIncomingCacheSize = 800000;
     this->incomingPacketSize = 0;
@@ -91,6 +93,7 @@ void GP::processPacket(QHash<QString, QVariant> pack)
 
 void GP::processIncoming(QByteArray data)
 {
+    this->recvBytes += static_cast<unsigned long long>(data.size());
     if (this->incomingPacketSize)
     {
         // we are already receiving a packet
@@ -196,6 +199,7 @@ void GP::SendPacket(QHash<QString, QVariant> packet)
     // We must lock the connection here to prevent multiple threads from writing into same socket thus writing borked data
     // into it
     this->mutex.lock();
+    this->sentBytes += static_cast<unsigned long long>(result.size());
     this->socket->write(result);
     this->socket->flush();
     this->mutex.unlock();
@@ -231,6 +235,21 @@ void GP::Disconnect()
         this->socket->close();
     this->socket->deleteLater();
     this->socket = NULL;
+}
+
+unsigned long long GP::GetBytesSent()
+{
+    return this->sentBytes;
+}
+
+unsigned long long GP::GetBytesRcvd()
+{
+    return this->recvBytes;
+}
+
+int GP::GetVersion()
+{
+    return GP_VERSION;
 }
 
 
