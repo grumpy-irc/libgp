@@ -30,6 +30,19 @@
 #define GP_DEFAULT_PORT 6200
 #define GP_TYPE_SYSTEM 0
 
+#define GP_CMD_HELLO                        "HELLO"
+#define GP_CMD_SERVER                       "SERVER"
+#define GP_CMD_NETWORK_INFO                 "NETWORK_INFO"
+#define GP_CMD_LOGIN                        "LOGIN"
+#define GP_CMD_LOGIN_OK                     "LOGIN_OK"
+#define GP_CMD_LOGIN_FAIL                   "LOGIN_FAIL"
+#define GP_CMD_RAW                          "RAW"
+#define GP_CMD_PERMDENY                     "PERMDENY"
+#define GP_CMD_UNKNOWN                      "UNKNOWN"
+#define GP_CMD_ERROR                        "ERROR"
+#define GP_CMD_SCROLLBACK_RESYNC            "SCROLLBACK_RESYNC"
+#define GP_CMD_SCROLLBACK_LOAD_NEW_ITEM     "SCROLLBACK_LOAD_NEW_ITEM"
+
 class QTcpSocket;
 
 namespace libgp
