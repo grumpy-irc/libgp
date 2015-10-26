@@ -17,8 +17,11 @@
 #include <QObject>
 #include <QHash>
 #include <QMutex>
+#include <QDateTime>
 #include <QAbstractSocket>
 #include <QString>
+
+// #define GP_WITH_STAT
 
 #define GP_EALREADYLOGGEDIN      -1
 #define GP_EINVALIDLOGINPARAMS   -2
@@ -99,6 +102,11 @@ namespace libgp
             QTcpSocket *socket;
 
         private:
+#ifdef GP_WITH_STAT
+            unsigned long long largePacketSize;
+            unsigned long long largestPacketSize;
+            QDateTime currentPacketTime;
+#endif
             unsigned long long sentBytes;
             unsigned long long recvBytes;
     };

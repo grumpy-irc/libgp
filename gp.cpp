@@ -11,6 +11,7 @@
 // Copyright (c) Petr Bena 2015
 
 #include <QTcpSocket>
+#include <QDataStream>
 #include "gp_exception.h"
 #include "gp.h"
 
