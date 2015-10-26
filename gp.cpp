@@ -11,6 +11,7 @@
 // Copyright (c) Petr Bena 2015
 
 #include <QTcpSocket>
+#include <QSslSocket>
 #include <QDataStream>
 #include "gp_exception.h"
 #include "gp.h"
@@ -51,7 +52,7 @@ void GP::OnPingSend()
 
 void GP::OnError(QAbstractSocket::SocketError er)
 {
-
+    qDebug() << "Socket error: " + this->socket->errorString();
 }
 
 void GP::OnReceive()
@@ -62,6 +63,11 @@ void GP::OnReceive()
 void GP::OnConnected()
 {
 
+}
+
+void GP::OnDisconnect()
+{
+    emit this->Event_Disconnected();
 }
 
 void GP::OnIncomingCommand(QString text, QHash<QString, QVariant> parameters)
@@ -225,6 +231,7 @@ void GP::ResolveSignals()
     if (!this->socket)
         throw new GP_Exception("this->socket");
     connect(this->socket, SIGNAL(readyRead()), this, SLOT(OnReceive()));
+    connect(this->socket, SIGNAL(disconnected()), this, SLOT(OnDisconnect()));
     connect(this->socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(OnError(QAbstractSocket::SocketError)));
 }
 
