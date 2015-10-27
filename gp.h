@@ -26,6 +26,8 @@
 #define GP_EALREADYLOGGEDIN      -1
 #define GP_EINVALIDLOGINPARAMS   -2
 #define GP_ENOSERVER             -3
+#define GP_ENETWORKNOTFOUND      -4
+#define GP_ESCROLLBACKNOTFOUND   -5
 
 #define GP_VERSION          0x010000
 #define GP_MAGIC            0x010000
@@ -45,7 +47,9 @@
 #define GP_CMD_RAW                          "RAW"
 #define GP_CMD_PERMDENY                     "PERMDENY"
 #define GP_CMD_UNKNOWN                      "UNKNOWN"
+#define GP_CMD_MESSAGE                      "MESSAGE"
 #define GP_CMD_ERROR                        "ERROR"
+#define GP_CMD_IRC_QUIT                     "IRC_QUIT"
 //! This command is delivered when a new channel is joined by user
 #define GP_CMD_CHANNEL_JOIN                 "CHANNEL_JOIN"
 #define GP_CMD_CHANNEL_RESYNC               "CHANNEL_RESYNC"
@@ -53,6 +57,9 @@
 //! not channel lists and other lists of structures that have pointers
 #define GP_CMD_NETWORK_RESYNC               "NETWORK_RESYNC"
 #define GP_CMD_SCROLLBACK_RESYNC            "SCROLLBACK_RESYNC"
+//! Used to save traffic on events where we need to resync some of the scrollback attributes but not buffer contents
+//! only resync some of the scrollback items
+#define GP_CMD_SCROLLBACK_PARTIAL_RESYNC    "SCROLLBACK_PARTIAL_RESYNC"
 #define GP_CMD_SCROLLBACK_LOAD_NEW_ITEM     "SCROLLBACK_LOAD_NEW_ITEM"
 
 class QTcpSocket;
@@ -70,7 +77,7 @@ namespace libgp
             GP(QTcpSocket *tcp_socket = 0);
             virtual ~GP();
             virtual bool IsConnected() const;
-            virtual void SendPacket(QHash<QString, QVariant> packet);
+            virtual bool SendPacket(QHash<QString, QVariant> packet);
             virtual void SendProtocolCommand(QString command);
             virtual void SendProtocolCommand(QString command, QHash<QString, QVariant> parameters);
             //! Perform connection of Qt signals to internal functions,

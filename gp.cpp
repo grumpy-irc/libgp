@@ -193,8 +193,10 @@ void GP::processHeader(QByteArray data)
     this->incomingPacketSize = header;
 }
 
-void GP::SendPacket(QHash<QString, QVariant> packet)
+bool GP::SendPacket(QHash<QString, QVariant> packet)
 {
+    if (!this->socket)
+        return false;
     // Current format of every packet is extremely simple
     // First GP_HEADER_SIZE bytes are the size of packet
     // Following bytes are the packet itself
@@ -210,6 +212,7 @@ void GP::SendPacket(QHash<QString, QVariant> packet)
     this->socket->write(result);
     this->socket->flush();
     this->mutex.unlock();
+    return true;
 }
 
 void GP::SendProtocolCommand(QString command)
