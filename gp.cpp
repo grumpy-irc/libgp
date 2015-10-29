@@ -24,7 +24,7 @@ GP::GP(QTcpSocket *tcp_socket)
     this->sentBytes = 0;
     this->recvBytes = 0;
     // We don't want to receive single packet bigger than 800kb
-    this->MaxIncomingCacheSize = 800000;
+    this->MaxIncomingCacheSize = 800 * 1024;
     this->incomingPacketSize = 0;
 }
 
