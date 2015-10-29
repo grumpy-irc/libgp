@@ -23,6 +23,8 @@
 
 // #define GP_WITH_STAT
 
+#define GP_INIT_DS(stream) stream.setVersion(QDataStream::Qt_4_0)
+
 #define GP_EALREADYLOGGEDIN      -1
 #define GP_EINVALIDLOGINPARAMS   -2
 #define GP_ENOSERVER             -3

@@ -160,6 +160,7 @@ static QByteArray ToArray(QHash<QString, QVariant> data)
 {
     QByteArray result;
     QDataStream stream(&result, QIODevice::ReadWrite);
+    GP_INIT_DS(stream);
     stream << data;
     return result;
 }
@@ -168,6 +169,7 @@ static QByteArray ToArray(int number)
 {
     QByteArray result;
     QDataStream stream(&result, QIODevice::ReadWrite);
+    GP_INIT_DS(stream);
     stream << qint64(number);
     return result;
 }
@@ -175,6 +177,7 @@ static QByteArray ToArray(int number)
 QHash<QString, QVariant> GP::packetFromIncomingCache()
 {
     QDataStream stream(&this->incomingCache, QIODevice::ReadWrite);
+    GP_INIT_DS(stream);
     QHash<QString, QVariant> data;
     stream >> data;
     this->incomingPacketSize = 0;
@@ -186,6 +189,7 @@ void GP::processHeader(QByteArray data)
 {
     qint64 header;
     QDataStream stream(&data, QIODevice::ReadWrite);
+    GP_INIT_DS(stream);
     stream >> header;
     if (header < 0)
         throw new GP_Exception("Negative header size");
