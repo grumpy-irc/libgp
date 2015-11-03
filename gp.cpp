@@ -13,12 +13,13 @@
 #include <QTcpSocket>
 #include <QSslSocket>
 #include <QDataStream>
+#include "thread.h"
 #include "gp_exception.h"
 #include "gp.h"
 
 using namespace libgp;
 
-GP::GP(QTcpSocket *tcp_socket)
+GP::GP(QTcpSocket *tcp_socket, bool mt)
 {
     this->socket = tcp_socket;
     this->sentBytes = 0;
@@ -26,10 +27,21 @@ GP::GP(QTcpSocket *tcp_socket)
     // We don't want to receive single packet bigger than 800kb
     this->MaxIncomingCacheSize = 800 * 1024;
     this->incomingPacketSize = 0;
+    if (!mt)
+    {
+        this->thread = NULL;
+    }
+    else
+    {
+        this->thread = new Thread(this);
+        this->thread->start();
+    }
+    this->isMultithreaded = mt;
 }
 
 GP::~GP()
 {
+    delete this->thread;
     delete this->socket;
 }
 
@@ -75,6 +87,23 @@ void GP::OnIncomingCommand(QString text, QHash<QString, QVariant> parameters)
     emit this->Event_IncomingCommand(text, parameters);
 }
 
+void GP::processPacket()
+{
+    if (this->isMultithreaded)
+    {
+        // Store this byte array into fifo for later processing by processor thread
+        this->mtLock.lock();
+        this->mtBuffer.append(this->incomingCache);
+        this->mtLock.unlock();
+        this->incomingPacketSize = 0;
+        this->incomingCache.clear();
+        return;
+    }
+
+    QHash<QString, QVariant> pack = this->packetFromIncomingCache();
+    this->processPacket(pack);
+}
+
 void GP::processPacket(QHash<QString, QVariant> pack)
 {
     if (!pack.contains("type"))
@@ -112,7 +141,7 @@ void GP::processIncoming(QByteArray data)
             // this is extremely rare
             // the packet we received is exactly the remaining part of a block of data we are receiving
             this->incomingCache.append(data);
-            this->processPacket(this->packetFromIncomingCache());
+            this->processPacket();
         } else if (data.size() < remaining_packet_data)
         {
             // just append and skip
@@ -123,7 +152,7 @@ void GP::processIncoming(QByteArray data)
             // packet, so we need to cut the remaining part and process
             QByteArray remaining_part = data.mid(0, remaining_packet_data);
             this->incomingCache.append(remaining_part);
-            this->processPacket(this->packetFromIncomingCache());
+            this->processPacket();
             data = data.mid(remaining_packet_data);
             this->processIncoming(data);
         }
@@ -185,6 +214,15 @@ QHash<QString, QVariant> GP::packetFromIncomingCache()
     return data;
 }
 
+QHash<QString, QVariant> GP::packetFromRawBytes(QByteArray packet)
+{
+    QDataStream stream(&packet, QIODevice::ReadWrite);
+    GP_INIT_DS(stream);
+    QHash<QString, QVariant> data;
+    stream >> data;
+    return data;
+}
+
 void GP::processHeader(QByteArray data)
 {
     qint64 header;
@@ -195,6 +233,19 @@ void GP::processHeader(QByteArray data)
         throw new GP_Exception("Negative header size");
     this->incomingCache.clear();
     this->incomingPacketSize = header;
+}
+
+QByteArray GP::mtPop()
+{
+    QByteArray result;
+    this->mtLock.lock();
+    if (this->mtBuffer.size() > 0)
+    {
+        result = this->mtBuffer.at(0);
+        this->mtBuffer.removeAt(0);
+    }
+    this->mtLock.unlock();
+    return result;
 }
 
 bool GP::SendPacket(QHash<QString, QVariant> packet)

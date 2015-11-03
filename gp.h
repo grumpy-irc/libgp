@@ -68,6 +68,8 @@ class QTcpSocket;
 
 namespace libgp
 {
+    class Thread;
+
     //! Grumpy protocol
 
     //! This class is able to handle server or client connection using
@@ -76,7 +78,7 @@ namespace libgp
     {
             Q_OBJECT
         public:
-            GP(QTcpSocket *tcp_socket = 0);
+            GP(QTcpSocket *tcp_socket = 0, bool mt = false);
             virtual ~GP();
             virtual bool IsConnected() const;
             virtual bool SendPacket(QHash<QString, QVariant> packet);
@@ -90,6 +92,7 @@ namespace libgp
             unsigned long long GetBytesRcvd();
             virtual int GetVersion();
             unsigned long MaxIncomingCacheSize;
+            friend class libgp::Thread;
 
         signals:
             void Event_Connected();
@@ -108,10 +111,15 @@ namespace libgp
 
         protected:
             virtual void OnIncomingCommand(QString text, QHash<QString, QVariant> parameters);
-            void processPacket(QHash<QString, QVariant> pack);
-            void processIncoming(QByteArray data);
+            virtual void processPacket();
+            virtual void processPacket(QHash<QString, QVariant> pack);
+            virtual void processIncoming(QByteArray data);
             QHash<QString, QVariant> packetFromIncomingCache();
+            QHash<QString, QVariant> packetFromRawBytes(QByteArray packet);
             void processHeader(QByteArray data);
+            QByteArray mtPop();
+            QMutex mtLock;
+            QList<QByteArray> mtBuffer;
             QMutex mutex;
             qint64 incomingPacketSize;
             QByteArray incomingCache;
@@ -125,6 +133,8 @@ namespace libgp
 #endif
             unsigned long long sentBytes;
             unsigned long long recvBytes;
+            Thread *thread;
+            bool isMultithreaded;
     };
 }
 

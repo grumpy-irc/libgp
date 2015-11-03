@@ -14,11 +14,13 @@ TEMPLATE = lib
 DEFINES += GP_LIBRARY
 
 SOURCES += gp.cpp \
-    gp_exception.cpp
+    gp_exception.cpp \
+    thread.cpp
 
 HEADERS += gp.h\
         gp_global.h \
-    gp_exception.h
+    gp_exception.h \
+    thread.h
 
 unix {
     target.path = /usr/lib
