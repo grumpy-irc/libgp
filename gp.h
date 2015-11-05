@@ -63,6 +63,8 @@
 //! only resync some of the scrollback items
 #define GP_CMD_SCROLLBACK_PARTIAL_RESYNC    "SCROLLBACK_PARTIAL_RESYNC"
 #define GP_CMD_SCROLLBACK_LOAD_NEW_ITEM     "SCROLLBACK_LOAD_NEW_ITEM"
+#define GP_CMD_OPTIONS                      "OPTIONS"
+#define GP_CMD_USERLIST_SYNC                "USERLIST_SYNC"
 
 class QTcpSocket;
 
