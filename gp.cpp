@@ -27,6 +27,7 @@ GP::GP(QTcpSocket *tcp_socket, bool mt)
     // We don't want to receive single packet bigger than 800kb
     this->MaxIncomingCacheSize = 800 * 1024;
     this->incomingPacketSize = 0;
+    this->isSSL = false;
     if (!mt)
     {
         this->thread = NULL;
@@ -43,6 +44,31 @@ GP::~GP()
 {
     delete this->thread;
     delete this->socket;
+}
+
+void GP::Connect(QString host, int port, bool ssl)
+{
+    if (this->IsConnected())
+        throw new libgp::GP_Exception("You can't connect using protocol that is already connected");
+    this->isSSL = ssl;
+    if (ssl)
+        this->socket = new QSslSocket();
+    else
+        this->socket = new QTcpSocket();
+    this->ResolveSignals();
+    if (!ssl)
+    {
+        connect(this->socket, SIGNAL(connected()), this, SLOT(OnConnected()));
+        this->socket->connectToHost(host, port);
+    }
+    else
+    {
+        connect(((QSslSocket*)this->socket), SIGNAL(encrypted()), this, SLOT(OnConnected()));
+        connect(((QSslSocket*)this->socket), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(OnSslHandshakeFailure(QList<QSslError>)));
+        ((QSslSocket*)this->socket)->connectToHostEncrypted(host, port);
+        if (!((QSslSocket*)this->socket)->waitForEncrypted())
+            this->closeError("SSL handshake failed: " + this->socket->errorString(), GP_ESSLHANDSHAKEFAILED);
+    }
 }
 
 bool GP::IsConnected() const
@@ -72,9 +98,18 @@ void GP::OnReceive()
     this->processIncoming(this->socket->readAll());
 }
 
+void GP::OnSslHandshakeFailure(QList<QSslError> el)
+{
+    bool ok = true;
+    emit this->Event_SslHandshakeFailure(el, &ok);
+
+    if (ok)
+        ((QSslSocket*)this->socket)->ignoreSslErrors();
+}
+
 void GP::OnConnected()
 {
-
+    emit this->Event_Connected();
 }
 
 void GP::OnDisconnect()
@@ -183,6 +218,17 @@ void GP::processIncoming(QByteArray data)
             this->processIncoming(data);
         }
     }
+}
+
+void GP::closeError(QString error, int code)
+{
+    if (!this->socket)
+        return;
+    if (this->socket->isOpen())
+        this->socket->close();
+    this->socket->deleteLater();
+    this->socket = NULL;
+    emit this->Event_ConnectionFailed(error, code);
 }
 
 static QByteArray ToArray(QHash<QString, QVariant> data)

@@ -16,6 +16,7 @@
 #include "gp_global.h"
 #include <QObject>
 #include <QHash>
+#include <QSslError>
 #include <QMutex>
 #include <QDateTime>
 #include <QAbstractSocket>
@@ -30,6 +31,7 @@
 #define GP_ENOSERVER             -3
 #define GP_ENETWORKNOTFOUND      -4
 #define GP_ESCROLLBACKNOTFOUND   -5
+#define GP_ESSLHANDSHAKEFAILED   -20
 
 #define GP_VERSION          0x010000
 #define GP_MAGIC            0x010000
@@ -82,6 +84,7 @@ namespace libgp
         public:
             GP(QTcpSocket *tcp_socket = 0, bool mt = false);
             virtual ~GP();
+            virtual void Connect(QString host, int port, bool ssl);
             virtual bool IsConnected() const;
             virtual bool SendPacket(QHash<QString, QVariant> packet);
             virtual void SendProtocolCommand(QString command);
@@ -100,7 +103,9 @@ namespace libgp
             void Event_Connected();
             void Event_Disconnected();
             void Event_Timeout();
+            void Event_ConnectionFailed(QString reason, int ec);
             void Event_Incoming(QHash<QString, QVariant> packet);
+            void Event_SslHandshakeFailure(QList<QSslError> el, bool *is_ok);
             void Event_IncomingCommand(QString text, QHash<QString, QVariant> parameters);
 
         protected slots:
@@ -108,6 +113,7 @@ namespace libgp
             virtual void OnPingSend();
             virtual void OnError(QAbstractSocket::SocketError er);
             virtual void OnReceive();
+            virtual void OnSslHandshakeFailure(QList<QSslError> el);
             virtual void OnConnected();
             virtual void OnDisconnect();
 
@@ -116,6 +122,7 @@ namespace libgp
             virtual void processPacket();
             virtual void processPacket(QHash<QString, QVariant> pack);
             virtual void processIncoming(QByteArray data);
+            virtual void closeError(QString error, int code);
             QHash<QString, QVariant> packetFromIncomingCache();
             QHash<QString, QVariant> packetFromRawBytes(QByteArray packet);
             void processHeader(QByteArray data);
@@ -133,6 +140,7 @@ namespace libgp
             unsigned long long largestPacketSize;
             QDateTime currentPacketTime;
 #endif
+            bool isSSL;
             unsigned long long sentBytes;
             unsigned long long recvBytes;
             Thread *thread;
