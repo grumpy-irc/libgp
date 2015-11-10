@@ -110,7 +110,7 @@ namespace libgp
             void Event_ConnectionFailed(QString reason, int ec);
             void Event_Incoming(QHash<QString, QVariant> packet);
             void Event_SslHandshakeFailure(QList<QSslError> el, bool *is_ok);
-            void Event_IncomingCommand(unsigned int text, QHash<QString, QVariant> parameters);
+            void Event_IncomingCommand(gp_command_t text, QHash<QString, QVariant> parameters);
 
         protected slots:
             virtual void OnPing();
@@ -122,7 +122,7 @@ namespace libgp
             virtual void OnDisconnect();
 
         protected:
-            virtual void OnIncomingCommand(unsigned int text, QHash<QString, QVariant> parameters);
+            virtual void OnIncomingCommand(gp_command_t text, QHash<QString, QVariant> parameters);
             virtual void processPacket();
             virtual void processPacket(QHash<QString, QVariant> pack);
             virtual void processIncoming(QByteArray data);

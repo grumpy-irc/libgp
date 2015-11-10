@@ -117,7 +117,7 @@ void GP::OnDisconnect()
     emit this->Event_Disconnected();
 }
 
-void GP::OnIncomingCommand(unsigned int text, QHash<QString, QVariant> parameters)
+void GP::OnIncomingCommand(gp_command_t text, QHash<QString, QVariant> parameters)
 {
     emit this->Event_IncomingCommand(text, parameters);
 }
