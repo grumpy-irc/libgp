@@ -117,7 +117,7 @@ void GP::OnDisconnect()
     emit this->Event_Disconnected();
 }
 
-void GP::OnIncomingCommand(QString text, QHash<QString, QVariant> parameters)
+void GP::OnIncomingCommand(unsigned int text, QHash<QString, QVariant> parameters)
 {
     emit this->Event_IncomingCommand(text, parameters);
 }
@@ -151,12 +151,12 @@ void GP::processPacket(QHash<QString, QVariant> pack)
     {
         case GP_TYPE_SYSTEM:
         {
-            if (!pack.contains("text"))
-                throw new GP_Exception("Broken packet");
+            if (!pack.contains("cid"))
+                this->closeError("Broken packet", GP_ERROR);
             QHash<QString, QVariant> parameters;
             if (pack.contains("parameters"))
                 parameters = pack["parameters"].toHash();
-            this->OnIncomingCommand(pack["text"].toString(), parameters);
+            this->OnIncomingCommand(pack["cid"].toUInt(), parameters);
         }
             break;
     }
@@ -316,16 +316,16 @@ bool GP::SendPacket(QHash<QString, QVariant> packet)
     return true;
 }
 
-void GP::SendProtocolCommand(QString command)
+void GP::SendProtocolCommand(unsigned int command)
 {
     this->SendProtocolCommand(command, QHash<QString, QVariant>());
 }
 
-void GP::SendProtocolCommand(QString command, QHash<QString, QVariant> parameters)
+void GP::SendProtocolCommand(unsigned int command, QHash<QString, QVariant> parameters)
 {
     QHash<QString, QVariant> pack;
     pack.insert("type", QVariant(GP_TYPE_SYSTEM));
-    pack.insert("text", QVariant(command));
+    pack.insert("cid", QVariant(command));
     pack.insert("parameters", QVariant(parameters));
     this->SendPacket(pack);
 }
