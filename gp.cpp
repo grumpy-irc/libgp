@@ -66,8 +66,8 @@ void GP::Connect(QString host, int port, bool ssl)
         connect(((QSslSocket*)this->socket), SIGNAL(encrypted()), this, SLOT(OnConnected()));
         connect(((QSslSocket*)this->socket), SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(OnSslHandshakeFailure(QList<QSslError>)));
         ((QSslSocket*)this->socket)->connectToHostEncrypted(host, port);
-        if (!((QSslSocket*)this->socket)->waitForEncrypted())
-            this->closeError("SSL handshake failed: " + this->socket->errorString(), GP_ESSLHANDSHAKEFAILED);
+        //if (!((QSslSocket*)this->socket)->waitForEncrypted())
+        //    this->closeError("SSL handshake failed: " + this->socket->errorString(), GP_ESSLHANDSHAKEFAILED);
     }
 }
 
