@@ -29,12 +29,6 @@ typedef unsigned int gp_command_t;
 #define GP_INIT_DS(stream) stream.setVersion(QDataStream::Qt_4_0)
 
 #define GP_ERROR                  500
-#define GP_EALREADYLOGGEDIN      -1
-#define GP_EINVALIDLOGINPARAMS   -2
-#define GP_ENOSERVER             -3
-#define GP_ENETWORKNOTFOUND      -4
-#define GP_ESCROLLBACKNOTFOUND   -5
-#define GP_ESSLHANDSHAKEFAILED   -20
 
 #define GP_VERSION          0x010000
 #define GP_MAGIC            0x010000
@@ -118,6 +112,8 @@ namespace libgp
             QList<QByteArray> mtBuffer;
             QMutex mutex;
             qint64 incomingPacketSize;
+            //! This is a minimum size required for data so that they get compressed, for performance reasons
+            int minimumSizeForComp;
             qint64 incomingPacketCompressionLevel;
             int compression;
             QByteArray incomingCache;

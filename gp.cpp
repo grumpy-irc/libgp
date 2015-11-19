@@ -29,6 +29,7 @@ GP::GP(QTcpSocket *tcp_socket, bool mt)
     // We don't want to receive single packet bigger than 800kb
     this->MaxIncomingCacheSize = 800 * 1024;
     this->incomingPacketSize = 0;
+    this->minimumSizeForComp = 64;
     this->recvRAWBytes = 0;
     this->incomingPacketCompressionLevel = 0;
     this->compression = 0;
@@ -330,21 +331,28 @@ bool GP::SendPacket(QHash<QString, QVariant> packet)
     // First GP_HEADER_SIZE bytes are the size of packet and compression level
     // Following bytes are the packet itself
     QByteArray result = ToArray(packet);
-    if (this->compression)
+    bool using_compression = this->compression;
+    if (result.size() < this->minimumSizeForComp)
+        using_compression = false;
+    if (using_compression)
     {
         this->sentBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(result.size());
         result = qCompress(result, this->compression);
     }
     // Header contains 2 integers, first one is a size of whole packet (compressed if compression is used)
     // next one is an identifier of compression used
-    QByteArray header = ToArray(result.size()) + ToArray(this->compression);
+    QByteArray header;
+    if (using_compression)
+        header = ToArray(result.size()) + ToArray(this->compression);
+    else
+        header = ToArray(result.size()) + ToArray(0);
     if (header.size() != GP_HEADER_SIZE)
         throw new GP_Exception("Invalid header size: " + QString::number(header.size()));
     result.prepend(header);
     // We must lock the connection here to prevent multiple threads from writing into same socket thus writing borked data
     // into it
     this->mutex.lock();
-    if (!this->compression)
+    if (!using_compression)
         this->sentBytes += static_cast<unsigned long long>(result.size());
     else
         this->sentCmprBytes += static_cast<unsigned long long>(result.size());
