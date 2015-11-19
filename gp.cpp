@@ -24,9 +24,14 @@ GP::GP(QTcpSocket *tcp_socket, bool mt)
     this->socket = tcp_socket;
     this->sentBytes = 0;
     this->recvBytes = 0;
+    this->sentCmprBytes = 0;
+    this->recvCmprBytes = 0;
     // We don't want to receive single packet bigger than 800kb
     this->MaxIncomingCacheSize = 800 * 1024;
     this->incomingPacketSize = 0;
+    this->recvRAWBytes = 0;
+    this->incomingPacketCompressionLevel = 0;
+    this->compression = 0;
     this->isSSL = false;
     if (!mt)
     {
@@ -164,7 +169,7 @@ void GP::processPacket(QHash<QString, QVariant> pack)
 
 void GP::processIncoming(QByteArray data)
 {
-    this->recvBytes += static_cast<unsigned long long>(data.size());
+    this->recvRAWBytes += static_cast<unsigned long long>(data.size());
     if (this->incomingPacketSize)
     {
         // we are already receiving a packet
@@ -251,17 +256,37 @@ static QByteArray ToArray(int number)
 
 QHash<QString, QVariant> GP::packetFromIncomingCache()
 {
+    // Uncompress the data first
+    if (this->incomingPacketCompressionLevel)
+    {
+        this->recvCmprBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(this->incomingCache.size());
+        this->incomingCache = qUncompress(this->incomingCache);
+        this->recvBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(this->incomingCache.size());
+    } else
+    {
+        this->recvBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(this->incomingCache.size());
+    }
     QDataStream stream(&this->incomingCache, QIODevice::ReadWrite);
     GP_INIT_DS(stream);
     QHash<QString, QVariant> data;
     stream >> data;
     this->incomingPacketSize = 0;
+    this->incomingPacketCompressionLevel = 0;
     this->incomingCache.clear();
     return data;
 }
 
-QHash<QString, QVariant> GP::packetFromRawBytes(QByteArray packet)
+QHash<QString, QVariant> GP::packetFromRawBytes(QByteArray packet, int compression_level)
 {
+    if (compression_level)
+    {
+        this->recvCmprBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(packet.size());
+        packet = qUncompress(packet);
+        this->recvBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(packet.size());
+    } else
+    {
+        this->recvBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(packet.size());
+    }
     QDataStream stream(&packet, QIODevice::ReadWrite);
     GP_INIT_DS(stream);
     QHash<QString, QVariant> data;
@@ -271,12 +296,15 @@ QHash<QString, QVariant> GP::packetFromRawBytes(QByteArray packet)
 
 void GP::processHeader(QByteArray data)
 {
-    qint64 header;
+    qint64 header, compression_level;
     QDataStream stream(&data, QIODevice::ReadWrite);
     GP_INIT_DS(stream);
-    stream >> header;
+    stream >> header >> compression_level;
     if (header < 0)
         throw new GP_Exception("Negative header size");
+    if (compression_level < 0 || compression_level > 9)
+        throw new GP_Exception("Invalid compression level");
+    this->incomingPacketCompressionLevel = compression_level;
     this->incomingCache.clear();
     this->incomingPacketSize = header;
 }
@@ -299,17 +327,27 @@ bool GP::SendPacket(QHash<QString, QVariant> packet)
     if (!this->socket)
         return false;
     // Current format of every packet is extremely simple
-    // First GP_HEADER_SIZE bytes are the size of packet
+    // First GP_HEADER_SIZE bytes are the size of packet and compression level
     // Following bytes are the packet itself
     QByteArray result = ToArray(packet);
-    QByteArray header = ToArray(result.size());
+    if (this->compression)
+    {
+        this->sentBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(result.size());
+        result = qCompress(result, this->compression);
+    }
+    // Header contains 2 integers, first one is a size of whole packet (compressed if compression is used)
+    // next one is an identifier of compression used
+    QByteArray header = ToArray(result.size()) + ToArray(this->compression);
     if (header.size() != GP_HEADER_SIZE)
         throw new GP_Exception("Invalid header size: " + QString::number(header.size()));
-    result.prepend(ToArray(result.size()));
+    result.prepend(header);
     // We must lock the connection here to prevent multiple threads from writing into same socket thus writing borked data
     // into it
     this->mutex.lock();
-    this->sentBytes += static_cast<unsigned long long>(result.size());
+    if (!this->compression)
+        this->sentBytes += static_cast<unsigned long long>(result.size());
+    else
+        this->sentCmprBytes += static_cast<unsigned long long>(result.size());
     this->socket->write(result);
     this->socket->flush();
     this->mutex.unlock();
@@ -349,6 +387,11 @@ void GP::Disconnect()
     this->socket = NULL;
 }
 
+void GP::SetCompression(int level)
+{
+    this->compression = level;
+}
+
 unsigned long long GP::GetBytesSent()
 {
     return this->sentBytes;
@@ -357,6 +400,16 @@ unsigned long long GP::GetBytesSent()
 unsigned long long GP::GetBytesRcvd()
 {
     return this->recvBytes;
+}
+
+unsigned long long GP::GetCompBytesSent() const
+{
+    return this->sentCmprBytes;
+}
+
+unsigned long long GP::GetCompBytesRcvd() const
+{
+    return this->recvCmprBytes;
 }
 
 int GP::GetVersion()

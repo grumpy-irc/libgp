@@ -36,7 +36,7 @@ void Thread::run()
             continue;
         }
         // These 2 calls are probably CPU intensive
-        QHash<QString, QVariant> packet = this->owner->packetFromRawBytes(incoming);
+        QHash<QString, QVariant> packet = this->owner->packetFromRawBytes(incoming, this->owner->compression);
         this->owner->processPacket(packet);
     }
 }

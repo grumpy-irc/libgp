@@ -38,10 +38,11 @@ typedef unsigned int gp_command_t;
 
 #define GP_VERSION          0x010000
 #define GP_MAGIC            0x010000
-#define GP_HEADER_SIZE      8
+#define GP_HEADER_SIZE      16
 #define GP_DEFAULT_PORT     6200
 #define GP_DEFAULT_SSL_PORT 6208
 #define GP_TYPE_SYSTEM      0
+#define GP_TYPE_COMPRESSION 1
 
 class QTcpSocket;
 
@@ -53,6 +54,14 @@ namespace libgp
 
     //! This class is able to handle server or client connection using
     //! grumpy's network protocol
+    //!
+    //! Visualisation of packet
+    //! <        HEADER       >|<                     DATA                         >
+    //! +--------+-------------+---------------------------------------------------+
+    //! | SIZE   | COMPRESSION | Remaining data                                    |
+    //! +--------+-------------+---------------------------------------------------+
+    //!
+    //! The size and compression are both 8 bytes long integers
     class GPSHARED_EXPORT GP : public QObject
     {
             Q_OBJECT
@@ -68,8 +77,11 @@ namespace libgp
             //! use this only if you aren't overriding this class
             virtual void ResolveSignals();
             virtual void Disconnect();
+            virtual void SetCompression(int level);
             unsigned long long GetBytesSent();
             unsigned long long GetBytesRcvd();
+            unsigned long long GetCompBytesSent() const;
+            unsigned long long GetCompBytesRcvd() const;
             virtual int GetVersion();
             unsigned long MaxIncomingCacheSize;
             friend class libgp::Thread;
@@ -99,13 +111,15 @@ namespace libgp
             virtual void processIncoming(QByteArray data);
             virtual void closeError(QString error, int code);
             QHash<QString, QVariant> packetFromIncomingCache();
-            QHash<QString, QVariant> packetFromRawBytes(QByteArray packet);
+            QHash<QString, QVariant> packetFromRawBytes(QByteArray packet, int compression_level);
             void processHeader(QByteArray data);
             QByteArray mtPop();
             QMutex mtLock;
             QList<QByteArray> mtBuffer;
             QMutex mutex;
             qint64 incomingPacketSize;
+            qint64 incomingPacketCompressionLevel;
+            int compression;
             QByteArray incomingCache;
             QTcpSocket *socket;
 
@@ -118,6 +132,9 @@ namespace libgp
             bool isSSL;
             unsigned long long sentBytes;
             unsigned long long recvBytes;
+            unsigned long long sentCmprBytes;
+            unsigned long long recvCmprBytes;
+            unsigned long long recvRAWBytes;
             Thread *thread;
             bool isMultithreaded;
     };
