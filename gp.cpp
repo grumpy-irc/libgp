@@ -19,6 +19,18 @@
 
 using namespace libgp;
 
+// This code prevents the hacker compression bomb vulnerability of compression libs
+#ifdef GP_PREVENT_HACK
+
+#define GP_SHIELD(package) if (((unsigned long)(package[0] << 24) | (package[1] << 16) | (package[2] <<  8) | (package[3])) > this->MaxIncomingCacheSize) \
+                             {\
+                                this->closeError("Too big packet", GP_ERROR);\
+                                return QHash<QString, QVariant>();\
+                             }
+#else
+#define GP_SHIELD(package)
+#endif
+
 GP::GP(QTcpSocket *tcp_socket, bool mt)
 {
     this->socket = tcp_socket;
@@ -96,6 +108,7 @@ void GP::OnPingSend()
 
 void GP::OnError(QAbstractSocket::SocketError er)
 {
+    Q_UNUSED(er);
     qDebug() << "Socket error: " + this->socket->errorString();
 }
 
@@ -261,6 +274,7 @@ QHash<QString, QVariant> GP::packetFromIncomingCache()
     if (this->incomingPacketCompressionLevel)
     {
         this->recvCmprBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(this->incomingCache.size());
+        GP_SHIELD(this->incomingCache);
         this->incomingCache = qUncompress(this->incomingCache);
         this->recvBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(this->incomingCache.size());
     } else
@@ -281,6 +295,7 @@ QHash<QString, QVariant> GP::packetFromRawBytes(QByteArray packet, int compressi
 {
     if (compression_level)
     {
+        GP_SHIELD(packet);
         this->recvCmprBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(packet.size());
         packet = qUncompress(packet);
         this->recvBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(packet.size());
@@ -305,6 +320,10 @@ void GP::processHeader(QByteArray data)
         throw new GP_Exception("Negative header size");
     if (compression_level < 0 || compression_level > 9)
         throw new GP_Exception("Invalid compression level");
+    if (header > this->MaxIncomingCacheSize)
+    {
+        this->closeError("Too big packet", GP_ERROR);
+    }
     this->incomingPacketCompressionLevel = compression_level;
     this->incomingCache.clear();
     this->incomingPacketSize = header;
