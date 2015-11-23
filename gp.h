@@ -83,6 +83,7 @@ namespace libgp
         signals:
             void Event_Connected();
             void Event_Disconnected();
+            void Event_SocketError(QAbstractSocket::SocketError er);
             void Event_Timeout();
             void Event_ConnectionFailed(QString reason, int ec);
             void Event_Incoming(QHash<QString, QVariant> packet);

@@ -108,8 +108,7 @@ void GP::OnPingSend()
 
 void GP::OnError(QAbstractSocket::SocketError er)
 {
-    Q_UNUSED(er);
-    qDebug() << "Socket error: " + this->socket->errorString();
+    emit this->Event_SocketError(er);
 }
 
 void GP::OnReceive()
