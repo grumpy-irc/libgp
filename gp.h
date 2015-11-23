@@ -39,6 +39,7 @@ typedef unsigned int gp_command_t;
 #define GP_TYPE_PING          2
 
 class QTcpSocket;
+class QMutex;
 class QTimer;
 
 namespace libgp
