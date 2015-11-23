@@ -208,8 +208,8 @@ void GP::processPacket(QHash<QString, QVariant> pack)
                 QHash<QString, QVariant> re;
                 re.insert("type", QVariant(GP_TYPE_PING));
                 re.insert("n", pack["n"]);
-                pack.insert("o", pack["p"]);
-                this->SendPacket(pack);
+                re.insert("o", pack["p"]);
+                this->SendPacket(re);
             }
             else if (pack.contains("o"))
             {
