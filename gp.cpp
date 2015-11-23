@@ -13,6 +13,7 @@
 #include <QTcpSocket>
 #include <QSslSocket>
 #include <QDataStream>
+#include <QMutex>
 #include <QTimer>
 #include "thread.h"
 #include "gp_exception.h"
@@ -46,6 +47,8 @@ GP::GP(QTcpSocket *tcp_socket, bool mt)
     this->recvRAWBytes = 0;
     this->timeout = 60;
     this->incomingPacketCompressionLevel = 0;
+    this->mutex = new QMutex(QMutex::Recursive);
+    this->mtLock = new QMutex(QMutex::Recursive);
     this->compression = 0;
     this->isSSL = false;
     this->timer = NULL;
@@ -65,7 +68,9 @@ GP::~GP()
 {
     delete this->thread;
     delete this->timer;
+    delete this->mtLock;
     delete this->socket;
+    delete this->mutex;
 }
 
 void GP::Connect(QString host, int port, bool ssl)
@@ -163,9 +168,9 @@ void GP::processPacket()
     if (this->isMultithreaded)
     {
         // Store this byte array into fifo for later processing by processor thread
-        this->mtLock.lock();
+        this->mtLock->lock();
         this->mtBuffer.append(this->incomingCache);
-        this->mtLock.unlock();
+        this->mtLock->unlock();
         this->incomingPacketSize = 0;
         this->incomingCache.clear();
         return;
@@ -376,13 +381,13 @@ void GP::processHeader(QByteArray data)
 QByteArray GP::mtPop()
 {
     QByteArray result;
-    this->mtLock.lock();
+    this->mtLock->lock();
     if (this->mtBuffer.size() > 0)
     {
         result = this->mtBuffer.at(0);
         this->mtBuffer.removeAt(0);
     }
-    this->mtLock.unlock();
+    this->mtLock->unlock();
     return result;
 }
 
@@ -414,14 +419,14 @@ bool GP::SendPacket(QHash<QString, QVariant> packet)
     result.prepend(header);
     // We must lock the connection here to prevent multiple threads from writing into same socket thus writing borked data
     // into it
-    this->mutex.lock();
+    this->mutex->lock();
     if (!using_compression)
         this->sentBytes += static_cast<unsigned long long>(result.size());
     else
         this->sentCmprBytes += static_cast<unsigned long long>(result.size());
     this->socket->write(result);
     this->socket->flush();
-    this->mutex.unlock();
+    this->mutex->unlock();
     return true;
 }
 

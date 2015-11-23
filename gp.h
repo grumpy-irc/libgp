@@ -17,7 +17,6 @@
 #include <QObject>
 #include <QHash>
 #include <QSslError>
-#include <QMutex>
 #include <QDateTime>
 #include <QAbstractSocket>
 #include <QString>
@@ -110,9 +109,9 @@ namespace libgp
             QHash<QString, QVariant> packetFromRawBytes(QByteArray packet, int compression_level);
             void processHeader(QByteArray data);
             QByteArray mtPop();
-            QMutex mtLock;
+            QMutex *mtLock;
             QList<QByteArray> mtBuffer;
-            QMutex mutex;
+            QMutex *mutex;
             qint64 incomingPacketSize;
             //! This is a minimum size required for data so that they get compressed, for performance reasons
             int minimumSizeForComp;
