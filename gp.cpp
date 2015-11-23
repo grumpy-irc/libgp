@@ -13,6 +13,7 @@
 #include <QTcpSocket>
 #include <QSslSocket>
 #include <QDataStream>
+#include <QTimer>
 #include "thread.h"
 #include "gp_exception.h"
 #include "gp.h"
@@ -43,6 +44,7 @@ GP::GP(QTcpSocket *tcp_socket, bool mt)
     this->incomingPacketSize = 0;
     this->minimumSizeForComp = 64;
     this->recvRAWBytes = 0;
+    this->timeout = 60;
     this->incomingPacketCompressionLevel = 0;
     this->compression = 0;
     this->isSSL = false;
@@ -61,6 +63,7 @@ GP::GP(QTcpSocket *tcp_socket, bool mt)
 GP::~GP()
 {
     delete this->thread;
+    delete this->timer;
     delete this->socket;
 }
 
@@ -87,6 +90,16 @@ void GP::Connect(QString host, int port, bool ssl)
         //if (!((QSslSocket*)this->socket)->waitForEncrypted())
         //    this->closeError("SSL handshake failed: " + this->socket->errorString(), GP_ESSLHANDSHAKEFAILED);
     }
+    this->lastPTS = 0;
+    if (this->timeout > 0)
+    {
+        this->lastPing = QDateTime::currentDateTime();
+        delete this->timer;
+        this->pingID = 0;
+        this->timer = new QTimer();
+        connect(this->timer, SIGNAL(timeout()), this, SLOT(OnPingSend()));
+        this->timer->start(13000);
+    }
 }
 
 bool GP::IsConnected() const
@@ -96,14 +109,18 @@ bool GP::IsConnected() const
     return this->socket->isOpen();
 }
 
-void GP::OnPing()
-{
-
-}
-
 void GP::OnPingSend()
 {
-
+    if (this->lastPing.secsTo(QDateTime::currentDateTime()) > this->timeout)
+    {
+        this->closeError("Ping timeout", GP_ERROR);
+        return;
+    }
+    QHash<QString, QVariant> pack;
+    pack.insert("type", QVariant(GP_TYPE_PING));
+    pack.insert("n", QVariant(++this->pingID));
+    pack.insert("p", QVariant(QDateTime::currentDateTime()));
+    this->SendPacket(pack);
 }
 
 void GP::OnError(QAbstractSocket::SocketError er)
@@ -165,6 +182,7 @@ void GP::processPacket(QHash<QString, QVariant> pack)
     emit this->Event_Incoming(pack);
 
     int type = pack["type"].toInt();
+    this->lastPing = QDateTime::currentDateTime();
     switch (type)
     {
         case GP_TYPE_SYSTEM:
@@ -175,6 +193,26 @@ void GP::processPacket(QHash<QString, QVariant> pack)
             if (pack.contains("parameters"))
                 parameters = pack["parameters"].toHash();
             this->OnIncomingCommand(pack["cid"].toUInt(), parameters);
+        }
+            break;
+        case GP_TYPE_PING:
+        {
+            if (pack.contains("p"))
+            {
+                QHash<QString, QVariant> re;
+                re.insert("type", QVariant(GP_TYPE_PING));
+                re.insert("n", pack["n"]);
+                pack.insert("o", pack["p"]);
+                this->SendPacket(pack);
+            }
+            else if (pack.contains("o"))
+            {
+                this->lastPTS = (unsigned long long)pack["o"].toDateTime().msecsTo(QDateTime::currentDateTime());
+            }
+            else
+            {
+                this->closeError("Broken ping reply", GP_ERROR);
+            }
         }
             break;
     }
@@ -240,6 +278,12 @@ void GP::processIncoming(QByteArray data)
 
 void GP::closeError(QString error, int code)
 {
+    if (this->timer)
+    {
+        this->timer->stop();
+        delete this->timer;
+        this->timer = NULL;
+    }
     if (!this->socket)
         return;
     if (this->socket->isOpen())

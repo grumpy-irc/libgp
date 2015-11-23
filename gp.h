@@ -30,15 +30,17 @@ typedef unsigned int gp_command_t;
 
 #define GP_ERROR                  500
 
-#define GP_VERSION          0x010000
-#define GP_MAGIC            0x010000
-#define GP_HEADER_SIZE      16
-#define GP_DEFAULT_PORT     6200
-#define GP_DEFAULT_SSL_PORT 6208
-#define GP_TYPE_SYSTEM      0
-#define GP_TYPE_COMPRESSION 1
+#define GP_VERSION            0x010000
+#define GP_MAGIC              0x010000
+#define GP_HEADER_SIZE        16
+#define GP_DEFAULT_PORT       6200
+#define GP_DEFAULT_SSL_PORT   6208
+#define GP_TYPE_SYSTEM        0
+#define GP_TYPE_COMPRESSION   1
+#define GP_TYPE_PING          2
 
 class QTcpSocket;
+class QTimer;
 
 namespace libgp
 {
@@ -91,7 +93,6 @@ namespace libgp
             void Event_IncomingCommand(gp_command_t text, QHash<QString, QVariant> parameters);
 
         protected slots:
-            virtual void OnPing();
             virtual void OnPingSend();
             virtual void OnError(QAbstractSocket::SocketError er);
             virtual void OnReceive();
@@ -127,6 +128,11 @@ namespace libgp
             QDateTime currentPacketTime;
 #endif
             bool isSSL;
+            QTimer *timer;
+            unsigned int timeout;
+            unsigned long long pingID;
+            unsigned long long lastPTS;
+            QDateTime lastPing;
             unsigned long long sentBytes;
             unsigned long long recvBytes;
             unsigned long long sentCmprBytes;
