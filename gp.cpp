@@ -48,6 +48,7 @@ GP::GP(QTcpSocket *tcp_socket, bool mt)
     this->incomingPacketCompressionLevel = 0;
     this->compression = 0;
     this->isSSL = false;
+    this->timer = NULL;
     if (!mt)
     {
         this->thread = NULL;
