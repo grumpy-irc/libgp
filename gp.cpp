@@ -366,9 +366,9 @@ void GP::processHeader(QByteArray data)
     GP_INIT_DS(stream);
     stream >> header >> compression_level;
     if (header < 0)
-        throw new GP_Exception("Negative header size");
+        this->closeError("Negative header size", GP_PROTOCOL_SERIOUS_FAILURE);
     if (compression_level < 0 || compression_level > 9)
-        throw new GP_Exception("Invalid compression level");
+        this->closeError("Invalid compression level", GP_PROTOCOL_SERIOUS_FAILURE);
     if (header > this->MaxIncomingCacheSize)
     {
         this->closeError("Too big packet", GP_ERROR);

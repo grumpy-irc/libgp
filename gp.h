@@ -27,7 +27,8 @@ typedef unsigned int gp_command_t;
 
 #define GP_INIT_DS(stream) stream.setVersion(QDataStream::Qt_4_0)
 
-#define GP_ERROR                  500
+#define GP_PROTOCOL_SERIOUS_FAILURE  200
+#define GP_ERROR                     500
 
 #define GP_VERSION            0x010000
 #define GP_MAGIC              0x010000
