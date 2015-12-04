@@ -430,12 +430,12 @@ bool GP::SendPacket(QHash<QString, QVariant> packet)
     return true;
 }
 
-void GP::SendProtocolCommand(unsigned int command)
+void GP::SendProtocolCommand(gp_command_t command)
 {
     this->SendProtocolCommand(command, QHash<QString, QVariant>());
 }
 
-void GP::SendProtocolCommand(unsigned int command, QHash<QString, QVariant> parameters)
+void GP::SendProtocolCommand(gp_command_t command, QHash<QString, QVariant> parameters)
 {
     QHash<QString, QVariant> pack;
     pack.insert("type", QVariant(GP_TYPE_SYSTEM));

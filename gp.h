@@ -24,6 +24,7 @@
 // #define GP_WITH_STAT
 
 typedef unsigned int gp_command_t;
+typedef unsigned char gp_byte_t;
 
 #define GP_INIT_DS(stream) stream.setVersion(QDataStream::Qt_4_0)
 
@@ -68,8 +69,8 @@ namespace libgp
             virtual void Connect(QString host, int port, bool ssl);
             virtual bool IsConnected() const;
             virtual bool SendPacket(QHash<QString, QVariant> packet);
-            virtual void SendProtocolCommand(unsigned int command);
-            virtual void SendProtocolCommand(unsigned int command, QHash<QString, QVariant> parameters);
+            virtual void SendProtocolCommand(gp_command_t command);
+            virtual void SendProtocolCommand(gp_command_t command, QHash<QString, QVariant> parameters);
             //! Perform connection of Qt signals to internal functions,
             //! use this only if you aren't overriding this class
             virtual void ResolveSignals();
