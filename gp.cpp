@@ -36,15 +36,11 @@ using namespace libgp;
 GP::GP(QTcpSocket *tcp_socket, bool mt)
 {
     this->socket = tcp_socket;
-    this->sentBytes = 0;
-    this->recvBytes = 0;
-    this->sentCmprBytes = 0;
-    this->recvCmprBytes = 0;
+    this->ResetCounters();
     // We don't want to receive single packet bigger than 800kb
     this->MaxIncomingCacheSize = 800 * 1024;
     this->incomingPacketSize = 0;
     this->minimumSizeForComp = 64;
-    this->recvRAWBytes = 0;
     this->timeout = 60;
     this->incomingPacketCompressionLevel = 0;
     this->mutex = new QMutex(QMutex::Recursive);
@@ -186,7 +182,7 @@ void GP::processPacket(QHash<QString, QVariant> pack)
         throw new GP_Exception("Broken packet");
 
     emit this->Event_Incoming(pack);
-
+    this->recvPackets++;
     int type = pack["type"].toInt();
     this->lastPing = QDateTime::currentDateTime();
     switch (type)
@@ -420,6 +416,7 @@ bool GP::SendPacket(QHash<QString, QVariant> packet)
     // We must lock the connection here to prevent multiple threads from writing into same socket thus writing borked data
     // into it
     this->mutex->lock();
+    this->sentPackets++;
     if (!using_compression)
         this->sentBytes += static_cast<unsigned long long>(result.size());
     else
@@ -468,6 +465,17 @@ void GP::SetCompression(int level)
     this->compression = level;
 }
 
+void GP::ResetCounters()
+{
+    this->recvPackets = 0;
+    this->sentPackets = 0;
+    this->sentBytes = 0;
+    this->sentCmprBytes = 0;
+    this->recvCmprBytes = 0;
+    this->recvRAWBytes = 0;
+    this->recvBytes = 0;
+}
+
 unsigned long long GP::GetBytesSent()
 {
     return this->sentBytes;
@@ -486,6 +494,16 @@ unsigned long long GP::GetCompBytesSent() const
 unsigned long long GP::GetCompBytesRcvd() const
 {
     return this->recvCmprBytes;
+}
+
+unsigned long long GP::GetPacketsSent() const
+{
+    return this->sentPackets;
+}
+
+unsigned long long GP::GetPacketsRecv() const
+{
+    return this->recvPackets;
 }
 
 int GP::GetVersion()

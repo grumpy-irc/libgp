@@ -76,10 +76,13 @@ namespace libgp
             virtual void ResolveSignals();
             virtual void Disconnect();
             virtual void SetCompression(int level);
+            virtual void ResetCounters();
             unsigned long long GetBytesSent();
             unsigned long long GetBytesRcvd();
             unsigned long long GetCompBytesSent() const;
             unsigned long long GetCompBytesRcvd() const;
+            unsigned long long GetPacketsSent() const;
+            unsigned long long GetPacketsRecv() const;
             virtual int GetVersion();
             unsigned long MaxIncomingCacheSize;
             friend class libgp::Thread;
@@ -136,6 +139,8 @@ namespace libgp
             unsigned long long lastPTS;
             QDateTime lastPing;
             unsigned long long sentBytes;
+            unsigned long long sentPackets;
+            unsigned long long recvPackets;
             unsigned long long recvBytes;
             unsigned long long sentCmprBytes;
             unsigned long long recvCmprBytes;
