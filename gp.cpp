@@ -313,6 +313,15 @@ static QByteArray ToArray(int number)
     return result;
 }
 
+static QByteArray ToArray(gp_byte_t number)
+{
+    QByteArray result;
+    QDataStream stream(&result, QIODevice::ReadWrite);
+    GP_INIT_DS(stream);
+    stream << number;
+    return result;
+}
+
 QHash<QString, QVariant> GP::packetFromIncomingCache()
 {
     // Uncompress the data first
@@ -357,7 +366,8 @@ QHash<QString, QVariant> GP::packetFromRawBytes(QByteArray packet, int compressi
 
 void GP::processHeader(QByteArray data)
 {
-    qint64 header, compression_level;
+    qint64 header;
+    gp_byte_t compression_level;
     QDataStream stream(&data, QIODevice::ReadWrite);
     GP_INIT_DS(stream);
     stream >> header >> compression_level;
@@ -401,7 +411,7 @@ bool GP::SendPacket(QHash<QString, QVariant> packet)
     if (using_compression)
     {
         this->sentBytes += GP_HEADER_SIZE + static_cast<unsigned long long>(result.size());
-        result = qCompress(result, this->compression);
+        result = qCompress(result, static_cast<int>(this->compression));
     }
     // Header contains 2 integers, first one is a size of whole packet (compressed if compression is used)
     // next one is an identifier of compression used

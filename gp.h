@@ -33,7 +33,7 @@ typedef unsigned char gp_byte_t;
 
 #define GP_VERSION            0x010000
 #define GP_MAGIC              0x010000
-#define GP_HEADER_SIZE        16
+#define GP_HEADER_SIZE        9
 #define GP_DEFAULT_PORT       6200
 #define GP_DEFAULT_SSL_PORT   6208
 #define GP_TYPE_SYSTEM        0
@@ -121,8 +121,8 @@ namespace libgp
             qint64 incomingPacketSize;
             //! This is a minimum size required for data so that they get compressed, for performance reasons
             int minimumSizeForComp;
-            qint64 incomingPacketCompressionLevel;
-            int compression;
+            gp_byte_t incomingPacketCompressionLevel;
+            gp_byte_t compression;
             QByteArray incomingCache;
             QTcpSocket *socket;
 
