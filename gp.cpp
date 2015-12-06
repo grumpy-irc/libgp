@@ -419,7 +419,7 @@ bool GP::SendPacket(QHash<QString, QVariant> packet)
     if (using_compression)
         header = ToArray(result.size()) + ToArray(this->compression);
     else
-        header = ToArray(result.size()) + ToArray(0);
+        header = ToArray(result.size()) + ToArray(static_cast<gp_byte_t>(0));
     if (header.size() != GP_HEADER_SIZE)
         throw new GP_Exception("Invalid header size: " + QString::number(header.size()));
     result.prepend(header);
