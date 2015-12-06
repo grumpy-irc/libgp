@@ -59,7 +59,8 @@ namespace libgp
     //! | SIZE   | COMPRESSION | Remaining data                                    |
     //! +--------+-------------+---------------------------------------------------+
     //!
-    //! The size and compression are both 8 bytes long integers
+    //! The size is 8 bytes long integer and compression 1 byte long,
+    //! in total 9 bytes
     class GPSHARED_EXPORT GP : public QObject
     {
             Q_OBJECT
