@@ -10,6 +10,7 @@
 
 // Copyright (c) Petr Bena 2015
 
+
 #include <QTcpSocket>
 #include <QSslSocket>
 #include <QDataStream>
@@ -184,7 +185,6 @@ void GP::processPacket(QHash<QString, QVariant> pack)
     emit this->Event_Incoming(pack);
     this->recvPackets++;
     int type = pack["type"].toInt();
-    this->lastPing = QDateTime::currentDateTime();
     switch (type)
     {
         case GP_TYPE_SYSTEM:
@@ -223,6 +223,7 @@ void GP::processPacket(QHash<QString, QVariant> pack)
 void GP::processIncoming(QByteArray data)
 {
     this->recvRAWBytes += static_cast<unsigned long long>(data.size());
+    this->lastPing = QDateTime::currentDateTime();
     if (this->incomingPacketSize)
     {
         // we are already receiving a packet
