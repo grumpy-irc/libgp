@@ -517,6 +517,21 @@ unsigned long long GP::GetPacketsRecv() const
     return this->recvPackets;
 }
 
+bool GP::IsReceiving()
+{
+    return this->incomingPacketSize > 0;
+}
+
+qint64 GP::GetIncomingPacketSize()
+{
+    return this->incomingPacketSize;
+}
+
+qint64 GP::GetIncomingPacketRecv()
+{
+    return this->incomingCache.size();
+}
+
 int GP::GetVersion()
 {
     return GP_VERSION;

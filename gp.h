@@ -84,6 +84,9 @@ namespace libgp
             unsigned long long GetCompBytesRcvd() const;
             unsigned long long GetPacketsSent() const;
             unsigned long long GetPacketsRecv() const;
+            virtual bool IsReceiving();
+            virtual qint64 GetIncomingPacketSize();
+            virtual qint64 GetIncomingPacketRecv();
             virtual int GetVersion();
             unsigned long MaxIncomingCacheSize;
             friend class libgp::Thread;
