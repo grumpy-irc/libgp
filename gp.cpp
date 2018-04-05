@@ -306,12 +306,12 @@ static QByteArray ToArray(QHash<QString, QVariant> data)
     return result;
 }
 
-static QByteArray ToArray(int number)
+static QByteArray ToArray(quint32 number)
 {
     QByteArray result;
     QDataStream stream(&result, QIODevice::ReadWrite);
     GP_INIT_DS(stream);
-    stream << qint64(number);
+    stream << number;
     return result;
 }
 
@@ -368,18 +368,20 @@ QHash<QString, QVariant> GP::packetFromRawBytes(QByteArray packet, int compressi
 
 void GP::processHeader(QByteArray data)
 {
-    qint64 header;
+    quint32 header;
     gp_byte_t compression_level;
     QDataStream stream(&data, QIODevice::ReadWrite);
     GP_INIT_DS(stream);
     stream >> header >> compression_level;
-    if (header < 0)
-        this->closeError("Negative header size", GP_PROTOCOL_SERIOUS_FAILURE);
     if (compression_level < 0 || compression_level > 9)
+    {
         this->closeError("Invalid compression level", GP_PROTOCOL_SERIOUS_FAILURE);
+        return;
+    }
     if (header > this->MaxIncomingCacheSize)
     {
         this->closeError("Too big packet", GP_ERROR);
+        return;
     }
     this->incomingPacketCompressionLevel = compression_level;
     this->incomingCache.clear();
@@ -419,9 +421,9 @@ bool GP::SendPacket(QHash<QString, QVariant> packet)
     // next one is an identifier of compression used
     QByteArray header;
     if (using_compression)
-        header = ToArray(result.size()) + ToArray(this->compression);
+        header = ToArray((quint32)result.size()) + ToArray(this->compression);
     else
-        header = ToArray(result.size()) + ToArray(static_cast<gp_byte_t>(0));
+        header = ToArray((quint32)result.size()) + ToArray(static_cast<gp_byte_t>(0));
     if (header.size() != GP_HEADER_SIZE)
         throw new GP_Exception("Invalid header size: " + QString::number(header.size()));
     result.prepend(header);
@@ -523,14 +525,14 @@ bool GP::IsReceiving()
     return this->incomingPacketSize > 0;
 }
 
-qint64 GP::GetIncomingPacketSize()
+quint32 GP::GetIncomingPacketSize()
 {
     return this->incomingPacketSize;
 }
 
-qint64 GP::GetIncomingPacketRecv()
+quint32 GP::GetIncomingPacketRecv()
 {
-    return this->incomingCache.size();
+    return (quint32)this->incomingCache.size();
 }
 
 int GP::GetVersion()

@@ -33,7 +33,7 @@ typedef unsigned char gp_byte_t;
 
 #define GP_VERSION            0x010000
 #define GP_MAGIC              0x010000
-#define GP_HEADER_SIZE        9
+#define GP_HEADER_SIZE        5
 #define GP_DEFAULT_PORT       6200
 #define GP_DEFAULT_SSL_PORT   6208
 #define GP_TYPE_SYSTEM        0
@@ -113,10 +113,10 @@ namespace libgp
             unsigned long long GetPacketsSent() const;
             unsigned long long GetPacketsRecv() const;
             virtual bool IsReceiving();
-            virtual qint64 GetIncomingPacketSize();
-            virtual qint64 GetIncomingPacketRecv();
+            virtual quint32 GetIncomingPacketSize();
+            virtual quint32 GetIncomingPacketRecv();
             virtual int GetVersion();
-            unsigned long MaxIncomingCacheSize;
+            quint32 MaxIncomingCacheSize;
             friend class libgp::Thread;
 
         signals:
@@ -150,7 +150,7 @@ namespace libgp
             QMutex *mtLock;
             QList<QByteArray> mtBuffer;
             QMutex *mutex;
-            qint64 incomingPacketSize;
+            quint32 incomingPacketSize;
             //! This is a minimum size required for data so that they get compressed, for performance reasons
             int minimumSizeForComp;
             gp_byte_t incomingPacketCompressionLevel;
