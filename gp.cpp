@@ -451,7 +451,9 @@ void GP::SendProtocolCommand(gp_command_t command, QHash<QString, QVariant> para
     QHash<QString, QVariant> pack;
     pack.insert("type", QVariant(GP_TYPE_SYSTEM));
     pack.insert("cid", QVariant(command));
-    pack.insert("parameters", QVariant(parameters));
+    // Optimize this
+    if (!parameters.isEmpty())
+        pack.insert("parameters", QVariant(parameters));
     this->SendPacket(pack);
 }
 
