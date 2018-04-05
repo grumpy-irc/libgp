@@ -8,7 +8,7 @@
 //MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //GNU Lesser General Public License for more details.
 
-// Copyright (c) Petr Bena 2015
+// Copyright (c) Petr Bena 2015 - 2018
 
 
 #include <QTcpSocket>
@@ -133,7 +133,9 @@ void GP::OnError(QAbstractSocket::SocketError er)
 
 void GP::OnReceive()
 {
-    this->processIncoming(this->socket->readAll());
+    QByteArray incoming_data = this->socket->readAll();
+    this->recvRAWBytes += static_cast<unsigned long long>(incoming_data.size());
+    this->processIncoming(incoming_data);
 }
 
 void GP::OnSslHandshakeFailure(QList<QSslError> el)
@@ -222,7 +224,6 @@ void GP::processPacket(QHash<QString, QVariant> pack)
 
 void GP::processIncoming(QByteArray data)
 {
-    this->recvRAWBytes += static_cast<unsigned long long>(data.size());
     this->lastPing = QDateTime::currentDateTime();
     if (this->incomingPacketSize)
     {
