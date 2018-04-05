@@ -8,7 +8,7 @@
 //MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //GNU Lesser General Public License for more details.
 
-// Copyright (c) Petr Bena 2015
+// Copyright (c) Petr Bena 2015 - 2018
 
 #ifndef GP_H
 #define GP_H
@@ -61,12 +61,40 @@ namespace libgp
     //!
     //! The size is 8 bytes long integer and compression 1 byte long,
     //! in total 9 bytes
+    //!
+    //! How this works:
+    //! This protocol is in its nature extremely simple, it takes the input data in form
+    //! of a QHash<QString, QVariable> (nested hashes supported), serialize them using
+    //! byte stream, optinally compress them, and then it will deliver them to other side
+    //! using the schema above.
+    //!
+    //! On other side, the GP protocol will deserialize data back to QHash<QString, QVariant>
+    //!
+    //! You basically want to initiate connection to other side using Connect method, then you
+    //! can send data (Hashes) using SendPacket to other side and receive them using
+    //! event Event_Incoming
+    //!
+    //! On server side, you need to create your own listener, that will create instance of GP
+    //! class with QTcpSocket in constructor, then instead of "Connect" call "ResolveSignals"
+    //! to connect event handler for socket operations, since then GP class will handle socket
+    //! on its own
+    //!
+    //!
+    //! See this sources for example implementation
+    //! server: https://github.com/grumpy-irc/grumpy/blob/master/src/grumpyd/session.cpp
+    //! client: https://github.com/grumpy-irc/grumpy/blob/master/src/libcore/grumpydsession.cpp
     class GPSHARED_EXPORT GP : public QObject
     {
             Q_OBJECT
         public:
             GP(QTcpSocket *tcp_socket = 0, bool mt = false);
             virtual ~GP();
+            /*!
+             * \brief Connect to remote server - only needed by clients
+             * \param host remote server address or IP
+             * \param port tcp port
+             * \param ssl  whether SSL is enabled
+             */
             virtual void Connect(QString host, int port, bool ssl);
             virtual bool IsConnected() const;
             virtual bool SendPacket(QHash<QString, QVariant> packet);
