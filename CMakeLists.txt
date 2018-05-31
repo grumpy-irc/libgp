@@ -34,7 +34,7 @@ ADD_DEFINITIONS( -DGP_LIBRARY -DQT_USE_QSTRINGBUILDER )
 ADD_LIBRARY(gp SHARED ${src} ${headers})
 
 if (QT5_BUILD)
-    qt5_use_modules(gp Core Network)
+    TARGET_LINK_LIBRARIES(gp Qt5::Core Qt5::Network)
 endif()
 
 TARGET_LINK_LIBRARIES(gp ${QT_LIBRARIES})
