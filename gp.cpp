@@ -182,7 +182,10 @@ void GP::processPacket()
 void GP::processPacket(QHash<QString, QVariant> pack)
 {
     if (!pack.contains("type"))
-        throw new GP_Exception("Broken packet");
+    {
+        this->closeError("Broken packet", GP_ERROR);
+        return;
+    }
 
     emit this->Event_Incoming(pack);
     this->recvPackets++;
@@ -192,7 +195,10 @@ void GP::processPacket(QHash<QString, QVariant> pack)
         case GP_TYPE_SYSTEM:
         {
             if (!pack.contains("cid"))
+            {
                 this->closeError("Broken packet", GP_ERROR);
+                return;
+            }
             QHash<QString, QVariant> parameters;
             if (pack.contains("parameters"))
                 parameters = pack["parameters"].toHash();
@@ -216,6 +222,7 @@ void GP::processPacket(QHash<QString, QVariant> pack)
             else
             {
                 this->closeError("Broken ping reply", GP_ERROR);
+                return;
             }
         }
             break;
@@ -230,7 +237,10 @@ void GP::processIncoming(QByteArray data)
         // we are already receiving a packet
         int remaining_packet_data = this->incomingPacketSize - this->incomingCache.size();
         if (remaining_packet_data < 0)
-            throw new GP_Exception("Negative packet size");
+        {
+            this->closeError("Negative packet size", GP_ERROR);
+            return;
+        }
         if (data.size() == remaining_packet_data)
         {
             // this is extremely rare
