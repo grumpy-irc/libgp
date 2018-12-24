@@ -10,7 +10,6 @@
 
 // Copyright (c) Petr Bena 2015 - 2018
 
-
 #include <QTcpSocket>
 #include <QSslSocket>
 #include <QDataStream>
@@ -48,10 +47,10 @@ GP::GP(QTcpSocket *tcp_socket, bool mt)
     this->mtLock = new QMutex(QMutex::Recursive);
     this->compression = 0;
     this->isSSL = false;
-    this->timer = NULL;
+    this->timer = nullptr;
     if (!mt)
     {
-        this->thread = NULL;
+        this->thread = nullptr;
     }
     else
     {
@@ -70,7 +69,7 @@ GP::~GP()
     delete this->mutex;
 }
 
-void GP::Connect(QString host, int port, bool ssl)
+void GP::Connect(const QString &host, int port, bool ssl)
 {
     if (this->IsConnected())
         throw new libgp::GP_Exception("You can't connect using protocol that is already connected");
@@ -138,7 +137,7 @@ void GP::OnReceive()
     this->processIncoming(incoming_data);
 }
 
-void GP::OnSslHandshakeFailure(QList<QSslError> el)
+void GP::OnSslHandshakeFailure(const QList<QSslError> &el)
 {
     bool ok = true;
     emit this->Event_SslHandshakeFailure(el, &ok);
@@ -157,7 +156,7 @@ void GP::OnDisconnect()
     emit this->Event_Disconnected();
 }
 
-void GP::OnIncomingCommand(gp_command_t text, QHash<QString, QVariant> parameters)
+void GP::OnIncomingCommand(gp_command_t text, const QHash<QString, QVariant> &parameters)
 {
     emit this->Event_IncomingCommand(text, parameters);
 }
@@ -290,24 +289,24 @@ void GP::processIncoming(QByteArray data)
     }
 }
 
-void GP::closeError(QString error, int code)
+void GP::closeError(const QString &error, int code)
 {
     if (this->timer)
     {
         this->timer->stop();
         delete this->timer;
-        this->timer = NULL;
+        this->timer = nullptr;
     }
     if (!this->socket)
         return;
     if (this->socket->isOpen())
         this->socket->close();
     this->socket->deleteLater();
-    this->socket = NULL;
+    this->socket = nullptr;
     emit this->Event_ConnectionFailed(error, code);
 }
 
-static QByteArray ToArray(QHash<QString, QVariant> data)
+static QByteArray ToArray(const QHash<QString, QVariant> &data)
 {
     QByteArray result;
     QDataStream stream(&result, QIODevice::ReadWrite);
@@ -402,7 +401,7 @@ QByteArray GP::mtPop()
 {
     QByteArray result;
     this->mtLock->lock();
-    if (this->mtBuffer.size() > 0)
+    if (!this->mtBuffer.empty())
     {
         result = this->mtBuffer.at(0);
         this->mtBuffer.removeAt(0);
@@ -411,7 +410,7 @@ QByteArray GP::mtPop()
     return result;
 }
 
-bool GP::SendPacket(QHash<QString, QVariant> packet)
+bool GP::SendPacket(const QHash<QString, QVariant> &packet)
 {
     if (!this->socket)
         return false;
@@ -456,7 +455,7 @@ void GP::SendProtocolCommand(gp_command_t command)
     this->SendProtocolCommand(command, QHash<QString, QVariant>());
 }
 
-void GP::SendProtocolCommand(gp_command_t command, QHash<QString, QVariant> parameters)
+void GP::SendProtocolCommand(gp_command_t command, const QHash<QString, QVariant> &parameters)
 {
     QHash<QString, QVariant> pack;
     pack.insert("type", QVariant(GP_TYPE_SYSTEM));
@@ -483,7 +482,7 @@ void GP::Disconnect()
     if (this->socket->isOpen())
         this->socket->close();
     this->socket->deleteLater();
-    this->socket = NULL;
+    this->socket = nullptr;
 }
 
 void GP::SetCompression(int level)

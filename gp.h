@@ -87,19 +87,19 @@ namespace libgp
     {
             Q_OBJECT
         public:
-            GP(QTcpSocket *tcp_socket = 0, bool mt = false);
-            virtual ~GP();
+            GP(QTcpSocket *tcp_socket = nullptr, bool mt = false);
+             ~GP() override;
             /*!
              * \brief Connect to remote server - only needed by clients
              * \param host remote server address or IP
              * \param port tcp port
              * \param ssl  whether SSL is enabled
              */
-            virtual void Connect(QString host, int port, bool ssl);
+            virtual void Connect(const QString &host, int port, bool ssl);
             virtual bool IsConnected() const;
-            virtual bool SendPacket(QHash<QString, QVariant> packet);
+            virtual bool SendPacket(const QHash<QString, QVariant> &packet);
             virtual void SendProtocolCommand(gp_command_t command);
-            virtual void SendProtocolCommand(gp_command_t command, QHash<QString, QVariant> parameters);
+            virtual void SendProtocolCommand(gp_command_t command, const QHash<QString, QVariant> &parameters);
             //! Perform connection of Qt signals to internal functions,
             //! use this only if you aren't overriding this class
             virtual void ResolveSignals();
@@ -133,16 +133,16 @@ namespace libgp
             virtual void OnPingSend();
             virtual void OnError(QAbstractSocket::SocketError er);
             virtual void OnReceive();
-            virtual void OnSslHandshakeFailure(QList<QSslError> el);
+            virtual void OnSslHandshakeFailure(const QList<QSslError> &el);
             virtual void OnConnected();
             virtual void OnDisconnect();
 
         protected:
-            virtual void OnIncomingCommand(gp_command_t text, QHash<QString, QVariant> parameters);
+            virtual void OnIncomingCommand(gp_command_t text, const QHash<QString, QVariant> &parameters);
             virtual void processPacket();
             virtual void processPacket(QHash<QString, QVariant> pack);
             virtual void processIncoming(QByteArray data);
-            virtual void closeError(QString error, int code);
+            virtual void closeError(const QString &error, int code);
             QHash<QString, QVariant> packetFromIncomingCache();
             QHash<QString, QVariant> packetFromRawBytes(QByteArray packet, int compression_level);
             void processHeader(QByteArray data);

@@ -23,11 +23,11 @@ namespace libgp
     {
         public:
             Thread(GP *gp);
-            ~Thread();
+            ~Thread() override=default;
 
         private:
             GP *owner;
-            void run();
+            void run() override;
     };
 }
 

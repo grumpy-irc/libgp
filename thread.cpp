@@ -20,11 +20,6 @@ Thread::Thread(GP *gp)
     this->owner = gp;
 }
 
-Thread::~Thread()
-{
-
-}
-
 void Thread::run()
 {
     while (this->isRunning())
@@ -32,7 +27,7 @@ void Thread::run()
         QByteArray incoming = this->owner->mtPop();
         if (incoming.isEmpty())
         {
-            this->msleep(100);
+            Thread::msleep(100);
             continue;
         }
         // These 2 calls are probably CPU intensive
