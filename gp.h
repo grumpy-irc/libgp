@@ -42,6 +42,9 @@ typedef unsigned char gp_byte_t;
 
 class QTcpSocket;
 class QMutex;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+class QRecursiveMutex;
+#endif
 class QTimer;
 
 namespace libgp
@@ -147,9 +150,14 @@ namespace libgp
             QHash<QString, QVariant> packetFromRawBytes(QByteArray packet, int compression_level);
             void processHeader(QByteArray data);
             QByteArray mtPop();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+            QRecursiveMutex *mtLock;
+            QRecursiveMutex *mutex;
+#else
             QMutex *mtLock;
-            QList<QByteArray> mtBuffer;
             QMutex *mutex;
+#endif
+            QList<QByteArray> mtBuffer;
             quint32 incomingPacketSize;
             //! This is a minimum size required for data so that they get compressed, for performance reasons
             int minimumSizeForComp;

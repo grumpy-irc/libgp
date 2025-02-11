@@ -13,7 +13,11 @@
 #include <QTcpSocket>
 #include <QSslSocket>
 #include <QDataStream>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QRecursiveMutex>
+#else
 #include <QMutex>
+#endif
 #include <QTimer>
 #include "thread.h"
 #include "gp_exception.h"
@@ -43,8 +47,13 @@ GP::GP(QTcpSocket *tcp_socket, bool mt)
     this->minimumSizeForComp = 64;
     this->timeout = 60;
     this->incomingPacketCompressionLevel = 0;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    this->mutex = new QRecursiveMutex();
+    this->mtLock = new QRecursiveMutex();
+#else
     this->mutex = new QMutex(QMutex::Recursive);
     this->mtLock = new QMutex(QMutex::Recursive);
+#endif
     this->compression = 0;
     this->isSSL = false;
     this->timer = nullptr;
