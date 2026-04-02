@@ -146,6 +146,8 @@ namespace libgp
             virtual void processPacket(QHash<QString, QVariant> pack);
             virtual void processIncoming(QByteArray data);
             virtual void closeError(const QString &error, int code);
+            void deleteTimer();
+            void deleteSocket();
             QHash<QString, QVariant> packetFromIncomingCache();
             QHash<QString, QVariant> packetFromRawBytes(QByteArray packet, int compression_level);
             void processHeader(QByteArray data);
@@ -191,4 +193,3 @@ namespace libgp
 }
 
 #endif // GP_H
-

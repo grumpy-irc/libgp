@@ -40,6 +40,8 @@ using namespace libgp;
 GP::GP(QTcpSocket *tcp_socket, bool mt)
 {
     this->socket = tcp_socket;
+    if (this->socket && !this->socket->parent())
+        this->socket->setParent(this);
     this->ResetCounters();
     // We don't want to receive single packet bigger than 10MB
     this->MaxIncomingCacheSize = 10 * 1024 * 1024;
@@ -72,9 +74,9 @@ GP::GP(QTcpSocket *tcp_socket, bool mt)
 GP::~GP()
 {
     delete this->thread;
-    delete this->timer;
+    this->deleteTimer();
     delete this->mtLock;
-    delete this->socket;
+    this->deleteSocket();
     delete this->mutex;
 }
 
@@ -87,6 +89,7 @@ void GP::Connect(const QString &host, int port, bool ssl)
         this->socket = new QSslSocket();
     else
         this->socket = new QTcpSocket();
+    this->socket->setParent(this);
     this->ResolveSignals();
     if (!ssl)
     {
@@ -105,9 +108,9 @@ void GP::Connect(const QString &host, int port, bool ssl)
     if (this->timeout > 0)
     {
         this->lastPing = QDateTime::currentDateTime();
-        delete this->timer;
+        this->deleteTimer();
         this->pingID = 0;
-        this->timer = new QTimer();
+        this->timer = new QTimer(this);
         connect(this->timer, SIGNAL(timeout()), this, SLOT(OnPingSend()));
         this->timer->start(13000);
     }
@@ -300,19 +303,33 @@ void GP::processIncoming(QByteArray data)
 
 void GP::closeError(const QString &error, int code)
 {
-    if (this->timer)
-    {
-        this->timer->stop();
-        delete this->timer;
-        this->timer = nullptr;
-    }
+    this->deleteTimer();
     if (!this->socket)
         return;
-    if (this->socket->isOpen())
-        this->socket->close();
-    this->socket->deleteLater();
-    this->socket = nullptr;
+    this->deleteSocket();
     emit this->Event_ConnectionFailed(error, code);
+}
+
+void GP::deleteTimer()
+{
+    if (!this->timer)
+        return;
+    this->timer->stop();
+    this->timer->disconnect(this);
+    this->timer->deleteLater();
+    this->timer = nullptr;
+}
+
+void GP::deleteSocket()
+{
+    if (!this->socket)
+        return;
+    QTcpSocket *socket = this->socket;
+    this->socket = nullptr;
+    socket->disconnect(this);
+    if (socket->isOpen())
+        socket->close();
+    socket->deleteLater();
 }
 
 static QByteArray ToArray(const QHash<QString, QVariant> &data)
@@ -486,12 +503,8 @@ void GP::ResolveSignals()
 
 void GP::Disconnect()
 {
-    if (!this->socket)
-        return;
-    if (this->socket->isOpen())
-        this->socket->close();
-    this->socket->deleteLater();
-    this->socket = nullptr;
+    this->deleteTimer();
+    this->deleteSocket();
 }
 
 void GP::SetCompression(int level)
@@ -559,5 +572,4 @@ int GP::GetVersion()
 {
     return GP_VERSION;
 }
-
 
